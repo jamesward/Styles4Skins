@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ADOBE SYSTEMS INCORPORATED
+Copyright 2008 Adobe Systems Incorporated
+All Rights Reserved.
+
+NOTICE: Adobe permits you to use, modify, and distribute this file
+in accordance with the terms of the license agreement accompanying it.
+
+-->
+
+<!--- The Spark skin class for the MX Button component. 
+
+@see mx.controls.Button
+
+@langversion 3.0
+@playerversion Flash 10
+@playerversion AIR 1.5
+@productversion Flex 4
+-->
+<s:SparkSkin xmlns:fx="http://ns.adobe.com/mxml/2009"
+                        xmlns:s="library://ns.adobe.com/flex/spark" 
+                        xmlns:local="mx.skins.spark.*"
+                        minWidth="21" minHeight="19" 
+                        alpha.disabledStates="0.5">
+  <fx:Metadata>
+    [HostComponent("spark.components.Button")]
+  </fx:Metadata>
+  
+  <fx:Script>
+    <![CDATA[
+      import mx.binding.utils.ChangeWatcher;
+      import mx.controls.ButtonLabelPlacement;
+      import mx.utils.ColorUtil;
+      
+      import spark.layouts.BasicLayout;
+      import spark.layouts.HorizontalLayout;
+      import spark.layouts.VerticalLayout;
+      import spark.layouts.supportClasses.LayoutBase;
+    
+    override protected function initializationComplete():void
+    {
+      useChromeColor = true;
+      super.initializationComplete();
+      
+      new FunctionReturnWatcher("getStyle", this, function():Array { return [ "icon" ]; }, null, [updateIcon], this.getStyle, true);
+      new FunctionReturnWatcher("getStyle", this, function():Array { return [ "disabledIcon" ]; }, null, [updateIcon], this.getStyle, true);
+      new FunctionReturnWatcher("getStyle", this, function():Array { return [ "downIcon" ]; }, null, [updateIcon], this.getStyle, true);
+      new FunctionReturnWatcher("getStyle", this, function():Array { return [ "overIcon" ]; }, null, [updateIcon], this.getStyle, true);
+      new FunctionReturnWatcher("getStyle", this, function():Array { return [ "selectedDisabledIcon" ]; }, null, [updateIcon], this.getStyle, true);
+      new FunctionReturnWatcher("getStyle", this, function():Array { return [ "selectedDownIcon" ]; }, null, [updateIcon], this.getStyle, true);
+      new FunctionReturnWatcher("getStyle", this, function():Array { return [ "selectedOverIcon" ]; }, null, [updateIcon], this.getStyle, true);
+      new FunctionReturnWatcher("getStyle", this, function():Array { return [ "selectedUpIcon" ]; }, null, [updateIcon], this.getStyle, true);
+      new FunctionReturnWatcher("getStyle", this, function():Array { return [ "upIcon" ]; }, null, [updateIcon], this.getStyle, true);
+      new FunctionReturnWatcher("getStyle", this, function():Array { return [ "verticalGap" ]; }, null, [updateIcon], this.getStyle, true);
+      new FunctionReturnWatcher("getStyle", this, function():Array { return [ "horizontalGap" ]; }, null, [updateIcon], this.getStyle, true);
+      
+      updateIcon();
+    }
+      
+    private function updateIcon(event:Event=null):void
+    {
+      if ( (getStyle('icon') != null) || (getStyle('disabledIcon') != null) || (getStyle('downIcon') != null) ||
+           (getStyle('overIcon') != null) || (getStyle('selectedDisabledIcon') != null) || (getStyle('selectedDownIcon') != null) ||
+           (getStyle('selectedOverIcon') != null) || (getStyle('selectedUpIcon') != null) || (getStyle('upIcon') != null) )
+      {
+        if (!iconLabelGroup.visible)
+        {
+          iconLabelGroup.visible = true;
+          removeElement(labelDisplay);
+          iconLabelGroup.addElement(labelDisplay);
+        }
+        
+        /*
+        if (hostComponent.labelPlacement == ButtonLabelPlacement.BOTTOM)
+        {
+          iconLabelGroup.layout = new VerticalLayout();
+          
+          (iconLabelGroup.layout as VerticalLayout).gap = getStyle("verticalGap");
+          iconLabelGroup.setElementIndex(labelDisplay, 1);
+        }
+        else if (hostComponent.labelPlacement == ButtonLabelPlacement.LEFT)
+        {
+          iconLabelGroup.layout = new HorizontalLayout();
+          (iconLabelGroup.layout as HorizontalLayout).gap = getStyle("horizontalGap");
+          iconLabelGroup.setElementIndex(labelDisplay, 0);
+        }
+        if (hostComponent.labelPlacement == ButtonLabelPlacement.RIGHT)
+        {
+          iconLabelGroup.layout = new HorizontalLayout();
+          (iconLabelGroup.layout as HorizontalLayout).gap = getStyle("horizontalGap");
+          iconLabelGroup.setElementIndex(labelDisplay, 1);
+        }
+        else if (hostComponent.labelPlacement == ButtonLabelPlacement.TOP)
+        {
+          iconLabelGroup.layout = new VerticalLayout();
+          (iconLabelGroup.layout as VerticalLayout).gap = getStyle("verticalGap");
+          iconLabelGroup.setElementIndex(labelDisplay, 0);
+        }
+        */
+        
+        (iconLabelGroup.layout as Object).paddingLeft = 10;
+        (iconLabelGroup.layout as Object).paddingRight = 10;
+        (iconLabelGroup.layout as Object).paddingTop = 4;
+        (iconLabelGroup.layout as Object).paddingBottom = 4;
+        (iconLabelGroup.layout as Object).verticalAlign = "middle";
+        (iconLabelGroup.layout as Object).horizontalAlign = "center";
+      }
+      else
+      {
+        if (iconLabelGroup.visible)
+        {
+          iconLabelGroup.visible = false;
+          iconLabelGroup.removeElement(labelDisplay);
+          addElement(labelDisplay);
+        }
+      }
+    }
+      
+    /**
+     *  @private
+     */
+    override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number) : void
+    {
+      var cr:Number = getStyle("cornerRadius");
+      
+      if (cornerRadius != cr)
+      {
+        cornerRadius = cr;
+        shadow.radiusX = cornerRadius;
+        fill.radiusX = cornerRadius;
+        lowlight.radiusX = cornerRadius;
+        highlight.radiusX = cornerRadius;
+        border.radiusX = cornerRadius;
+      }
+      
+      if (highlightStroke) highlightStroke.radiusX = cornerRadius;
+      if (hldownstroke1) hldownstroke1.radiusX = cornerRadius;
+      if (hldownstroke2) hldownstroke2.radiusX = cornerRadius;
+      
+      super.updateDisplayList(unscaledWidth, unscaledHeight);
+    }
+    
+    private var cornerRadius:Number = 2;
+    
+    
+    private function getLayout(labelPlacement:String, horizontalGap:Number, verticalGap:Number):LayoutBase
+    {
+      var l:LayoutBase;
+      
+      /*
+      if (labelPlacement == ButtonLabelPlacement.TOP || hostComponent.labelPlacement == ButtonLabelPlacement.BOTTOM)
+      {
+        l = new VerticalLayout();
+        (l as VerticalLayout).gap = verticalGap;
+      }
+      else
+      {
+      */
+        l = new HorizontalLayout();
+        (l as HorizontalLayout).gap = horizontalGap;
+      //}
+      
+      return l;
+    }
+    ]]>
+  </fx:Script>
+  
+  <fx:Declarations>
+    <s:ArrayCollection id="fillColors">
+      <s:source>{getStyle('fillColors')}</s:source>
+    </s:ArrayCollection>
+  </fx:Declarations>
+  
+  <!-- states -->
+  <s:states>
+    <s:State name="up" />
+    <s:State name="over" stateGroups="overStates" />
+    <s:State name="down" stateGroups="downStates" />
+    <s:State name="disabled" stateGroups="disabledStates" />
+    <s:State name="selectedUp" stateGroups="selectedStates, selectedUpStates" />
+    <s:State name="selectedOver" stateGroups="overStates, selectedStates" />
+    <s:State name="selectedDown" stateGroups="downStates, selectedStates" />
+    <s:State name="selectedDisabled" stateGroups="selectedUpStates, disabledStates, selectedStates" />
+  </s:states>
+  
+  <!-- layer 1: shadow -->
+  <!--- @private -->
+  <s:Rect id="shadow" left="-1" right="-1" top="-1" bottom="-1" radiusX="2">
+    <s:fill>
+      <s:LinearGradient rotation="90">
+        <s:GradientEntry color="0x000000" 
+                         color.downStates="0xFFFFFF"
+                         alpha="0.01"
+                         alpha.downStates="0" />
+        <s:GradientEntry color="0x000000" 
+                         color.downStates="0xFFFFFF" 
+                         alpha="0.07"
+                         alpha.downStates="0.5" />
+      </s:LinearGradient>
+    </s:fill>
+  </s:Rect>
+  
+  <!-- layer 2: fill -->
+  <!--- @private -->
+  <s:Rect id="fill" left="1" right="1" top="1" bottom="1" radiusX="2">
+    <s:fill>
+      <s:LinearGradient rotation="90">
+        <s:GradientEntry color="{fillColors[0] != null ? fillColors[0] : 0xFFFFFF}"
+                         color.overStates="{getStyle('fillColors')[2] != null ? getStyle('fillColors')[2] : 0xBBBDBD}" 
+                         color.downStates="{getStyle('themeColor') != null ? ColorUtil.adjustBrightness(getStyle('themeColor'), 128) : 0xAAAAAA}" 
+                         alpha="{getStyle('fillAlphas')[0] != null ? getStyle('fillAlphas')[0] : 0.85}"
+                         alpha.overStates="{getStyle('fillAlphas')[2] != null ? getStyle('fillAlphas')[2] : 1}"
+                         alpha.downStates="1"
+                         />
+        <s:GradientEntry color="{getStyle('fillColors')[1] != null ? getStyle('fillColors')[1] : 0xD8D8D8}" 
+                         color.over="{getStyle('fillColors')[3] != null ? getStyle('fillColors')[3] : 0x9FA0A1}" 
+                         color.downStates="{getStyle('themeColor') != null ? getStyle('themeColor') : 0x929496}" 
+                         alpha="{getStyle('fillAlphas')[1] != null ? getStyle('fillAlphas')[1] : 0.85}"
+                         alpha.overStates="{getStyle('fillAlphas')[3] != null ? getStyle('fillAlphas')[3] : 1}"
+                         alpha.downStates="1"
+                         />
+      </s:LinearGradient>
+    </s:fill>
+  </s:Rect>
+  
+  <!-- layer 3: fill lowlight -->
+  <!--- @private -->
+  <s:Rect id="lowlight" left="1" right="1" top="1" bottom="1" radiusX="2">
+    <s:fill>
+      <s:LinearGradient rotation="270">
+        <s:GradientEntry color="0x000000" ratio="0.0" alpha="0.0627" />
+        <s:GradientEntry color="0x000000" ratio="0.48" alpha="0.0099" />
+        <s:GradientEntry color="0x000000" ratio="0.48001" alpha="0" />
+      </s:LinearGradient>
+    </s:fill>
+  </s:Rect>
+  
+  <!-- layer 4: fill highlight -->
+  <!--- @private -->
+  <s:Rect id="highlight" left="1" right="1" top="1" bottom="1" radiusX="2">
+    <s:fill>
+      <s:LinearGradient rotation="90">
+        <s:GradientEntry color="0xFFFFFF"
+                         ratio="0.0"
+                         alpha="0.33" 
+                         alpha.selectedUpStates="0.22"
+                         alpha.overStates="0.22" 
+                         alpha.downStates="0.12"/>
+        <s:GradientEntry color="0xFFFFFF"
+                         ratio="0.48"
+                         alpha="0.33"
+                         alpha.selectedUpStates="0.22"
+                         alpha.overStates="0.22" 
+                         alpha.downStates="0.12" />
+        <s:GradientEntry color="0xFFFFFF"
+                         ratio="0.48001"
+                         alpha="0" />
+      </s:LinearGradient>
+    </s:fill>
+  </s:Rect>
+  
+  <!-- layer 5: highlight stroke (all states except down) -->
+  <!--- @private -->
+  <s:Rect id="highlightStroke" left="1" right="1" top="1" bottom="1" radiusX="2" excludeFrom="downStates">
+    <s:stroke>
+      <s:LinearGradientStroke rotation="90" weight="1">
+        <s:GradientEntry color="0xFFFFFF" alpha.overStates="0.22" alpha.selectedUpStates="0.33" />
+        <s:GradientEntry color="0xD8D8D8" alpha.overStates="0.22" alpha.selectedUpStates="0.33" />
+      </s:LinearGradientStroke>
+    </s:stroke>
+  </s:Rect>
+  
+  <!-- layer 6: highlight stroke (down state only) -->
+  <!--- @private -->
+  <s:Rect id="hldownstroke1" left="1" right="1" top="1" bottom="1" radiusX="2"
+          includeIn="downStates, selectedUpStates, selectedOver">
+    <s:stroke>
+      <s:LinearGradientStroke rotation="90" weight="1">
+        <s:GradientEntry color="0x000000" alpha="0.25" ratio="0.0" />
+        <s:GradientEntry color="0x000000" alpha="0.25" ratio="0.001" />
+        <s:GradientEntry color="0x000000" alpha="0.07" ratio="0.0011" />
+        <s:GradientEntry color="0x000000" alpha="0.07" ratio="0.965" />
+        <s:GradientEntry color="0x000000" alpha="0.00" ratio="0.9651" />
+      </s:LinearGradientStroke>
+    </s:stroke>
+  </s:Rect>
+  <!--- @private -->
+  <s:Rect id="hldownstroke2" left="2" right="2" top="2" bottom="2" radiusX="2"
+          includeIn="downStates, selectedUpStates, selectedOver">
+    <s:stroke>
+      <s:LinearGradientStroke rotation="90" weight="1">
+        <s:GradientEntry color="0x000000" alpha="0.09" ratio="0.0" />
+        <s:GradientEntry color="0x000000" alpha="0.00" ratio="0.0001" />
+      </s:LinearGradientStroke>
+    </s:stroke>
+  </s:Rect>
+  
+  <!-- layer 7: border - put on top of the fill so it doesn't disappear when scale is less than 1 -->
+  <!--- @private -->
+  <s:Rect id="border" left="0" right="0" top="0" bottom="0" width="69" height="20" radiusX="2">
+    <s:stroke>
+      <s:LinearGradientStroke rotation="90" weight="1">
+        <!--- @private -->
+        <s:GradientEntry id="borderEntry1" 
+                         alpha="0.5625"
+                         alpha.down="0.6375"
+                         alpha.selectedStates="0.6375" />
+        <!--- @private -->
+        <s:GradientEntry id="borderEntry2" 
+                         alpha="0.75" 
+                         alpha.down="0.85"
+                         alpha.selectedStates="0.85" />
+      </s:LinearGradientStroke>
+    </s:stroke>
+  </s:Rect>
+
+  <s:Group id="iconLabelGroup" width="100%" height="100%" visible="false">
+    <s:BitmapImage id="icon"
+                   source="{getStyle('icon')}"
+                   source.disabled="{getStyle('disabledIcon') != null ? getStyle('disabledIcon') : getStyle('icon')}"
+                   source.down="{getStyle('downIcon') != null ? getStyle('downIcon') : getStyle('icon')}"
+                   source.over="{getStyle('overIcon') != null ? getStyle('overIcon') : getStyle('icon')}"
+                   source.selectedDisabled="{getStyle('selectedDisabledIcon') != null ? getStyle('selectedDisabledIcon') : getStyle('icon')}"
+                   source.selectedDown="{getStyle('selectedDownIcon') != null ? getStyle('selectedDownIcon') : getStyle('icon')}"
+                   source.selectedOver="{getStyle('selectedOverIcon') != null ? getStyle('selectedOverIcon') : getStyle('icon')}"
+                   source.selectedUp="{getStyle('selectedUpIcon') != null ? getStyle('selectedUpIcon') : getStyle('icon')}"         
+                   source.up="{getStyle('upIcon') != null ? getStyle('upIcon') : getStyle('icon')}"/>
+    
+  </s:Group>
+    
+    <!-- layer 8: text -->
+    <!--- @copy spark.components.supportClasses.ButtonBase#labelDisplay -->
+    <s:Label id="labelDisplay"
+             textAlign="center"
+             verticalAlign="middle"
+             maxDisplayedLines="1"
+             horizontalCenter="0" verticalCenter="1"
+             left="10" right="10" top="2" bottom="2"
+             color.over="{getStyle('textRollOverColor')}"
+             color.selectedStates="{getStyle('textSelectedColor')}"
+             color.downStates="{getStyle('textSelectedColor')}"
+             >
+    </s:Label>
+  
+  <!--
+  <s:Rect width="100%" height="100%"> 
+    <s:fill>
+      <s:SolidColor color="{fillColors.getItemAt(0)}"/>
+    </s:fill>
+  </s:Rect>
+  -->
+  
+</s:SparkSkin>
