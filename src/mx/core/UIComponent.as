@@ -13182,10 +13182,20 @@ public class UIComponent extends FlexSprite
       {
         if (s.length > 0)
         {
-          s = s.replace(/\s/,"");
+          s = s.replace(/\s/g,"");
           var a:Array = s.split(":");
           
-          setStyle(a[0], a[1]);
+          // needed?
+          if ((a[1] as String).charAt(0) == "[")
+          {
+            var ss:String = a[1].substr(1, a[1].length - 2);
+            var na:Array = ss.split(",");
+            setStyle(a[0], na);
+          }
+          else
+          {
+            setStyle(a[0], a[1]);
+          }
         }
       }
     }
