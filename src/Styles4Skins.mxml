@@ -1,73 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
-               xmlns:s="library://ns.adobe.com/flex/spark" 
-               xmlns:mx="library://ns.adobe.com/flex/mx">
-               
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+               xmlns:s="library://ns.adobe.com/flex/spark"
+               viewSourceURL="http://github.com/jlward4th/Styles4Skins">
+
+  <fx:Script>
+    import mx.controls.ButtonLabelPlacement;
+  </fx:Script>
+
   <fx:Style>
     .bigLabel {
-      labelFontSize: 48;
+      fontSize: 48;
     }
   </fx:Style>
 
-  <s:layout>
-    <s:VerticalLayout paddingTop="10" paddingRight="10" paddingLeft="10" paddingBottom="10" gap="10"/>
-  </s:layout>
-  
-  <!--
-  <s:Button label="borderColor = #ff0000" style="borderColor: #ff0000" skinClass="EnterpriseButtonSkin"/>
+  <s:Scroller height="100%" width="100%">
+    <s:VGroup height="100%" paddingBottom="15" paddingLeft="15" paddingRight="15" paddingTop="15">
 
-  <s:Button label="themeColor = #ff0000" style="themeColor: #ff0000" skinClass="EnterpriseButtonSkin"/>
-  
-  <s:Button label="fillColors = [0x00ff00, 0x0000ff]" style="fillColors: [0x00ff00, 0x0000ff]" skinClass="EnterpriseButtonSkin"/>
-  
-  <s:Button label="fillColors = [0x00ffff, 0x0000ff]; themeColor = #ff0000" style="fillColors: [0x00ffff, 0x0000ff]; themeColor: #ff0000" skinClass="EnterpriseButtonSkin"/>
-  
-  <s:Button label="fillColors = [0xffff00, 0x0000ff, 0x00ffff, 0xff00ff]" style="fillColors: [0xffff00, 0x0000ff, 0x00ffff, 0xff00ff]" skinClass="EnterpriseButtonSkin"/>
-  
-  <s:Button label="set style" skinClass="EnterpriseButtonSkin">
-    <s:click>
-      event.currentTarget.style = "fillColors: [0xffff00, 0x0000ff, 0x00ffff, 0xff00ff]";
-    </s:click>
-  </s:Button>
-  
-  <s:Group width="300" height="100">
-    <s:Rect width="100%" height="100%">
-      <s:fill>
-        <s:SolidColor color="#ff0000"/>
-      </s:fill>
-    </s:Rect>
-    
-    <s:Button label="fillAlphas = [1, 1, 1, 1]" style="fillAlphas: [1, 1, 1, 1]" top="10" left="20" skinClass="EnterpriseButtonSkin"/>
-    
-    <s:Button label="fillAlphas = [0.1, 0.2]" style="fillAlphas: [0.1, 0.2]" top="40" left="20" skinClass="EnterpriseButtonSkin"/>
-    
-    <s:Button label="fillAlphas = [0.1, 1, 1, 0.1]" style="fillAlphas: [0.1, 1, 1, 0.1]" top="70" left="20" skinClass="EnterpriseButtonSkin"/>
-    
-  </s:Group>
-  -->
-  
-  <s:Button label="cornerRadius: 5; labelFontSize: 24;" style="cornerRadius: 5; labelFontSize: 24;" skinClass="StyledButtonSkin"/>
-    
-  <s:Button label="cornerRadius: 0; labelFontSize: 12;" style="cornerRadius: 0; labelFontSize: 12;" skinClass="StyledButtonSkin"/>
+      <s:Button label="borderColor = #ff0000" style="borderColor: #ff0000" skinClass="ButtonSkin"/>
 
-  <s:Button label="cornerRadius: 10;" style="cornerRadius: 10;" skinClass="StyledButtonSkin"/>
-  
-  <s:Button label="labelFontSize: 24;" style="labelFontSize: 48;" skinClass="StyledButtonSkin"/>
+      <s:Button label="themeColor = #ff0000" style="themeColor: #ff0000" skinClass="ButtonSkin"/>
 
-  <s:Button label="CSS bigLabel" skinClass="StyledButtonSkin" styleName="bigLabel"/>
+      <s:Button label="fillColors = [0x00ff00, 0x0000ff]" style="fillColors: [0x00ff00, 0x0000ff]" skinClass="ButtonSkin"/>
 
-  <s:Button id="b1" label="set style property" skinClass="StyledButtonSkin">
-    <s:click>
-      var ss:String = "labelFontSize: 36";
-      b1.label = ss;
-      b1.style = ss;
-    </s:click>
-  </s:Button>
-  
-  <s:Button id="b2" label="setStyle()" skinClass="StyledButtonSkin">
-    <s:click>
-      b2.setStyle('labelFontSize', 36);
-    </s:click>
-  </s:Button>
-               
+      <s:Button label="fillColors = [0x00ffff, 0x0000ff]; themeColor = #ff0000" style="fillColors: [0x00ffff, 0x0000ff]; themeColor: #ff0000" skinClass="ButtonSkin"/>
+
+      <s:Button label="fillColors = [0xffff00, 0x0000ff, 0x00ffff, 0xff00ff]" style="fillColors: [0xffff00, 0x0000ff, 0x00ffff, 0xff00ff]" skinClass="ButtonSkin"/>
+
+      <s:Button label="set style" skinClass="ButtonSkin">
+        <s:click>
+            event.currentTarget.style = "fillColors: [0xffff00, 0x0000ff, 0x00ffff, 0xff00ff]";
+        </s:click>
+      </s:Button>
+
+      <s:Group width="300" height="100">
+        <s:Rect width="100%" height="100%">
+          <s:fill>
+            <s:SolidColor color="#ff0000"/>
+          </s:fill>
+        </s:Rect>
+
+        <s:Button label="fillAlphas = [1, 1, 1, 1]" style="fillAlphas: [1, 1, 1, 1]" top="10" left="20" skinClass="ButtonSkin"/>
+
+        <s:Button label="fillAlphas = [0.1, 0.2]" style="fillAlphas: [0.1, 0.2]" top="40" left="20" skinClass="ButtonSkin"/>
+
+        <s:Button label="fillAlphas = [0.1, 1, 1, 0.1]" style="fillAlphas: [0.1, 1, 1, 0.1]" top="70" left="20" skinClass="ButtonSkin"/>
+
+      </s:Group>
+
+      <s:Button label="cornerRadius: 5; fontSize: 24;" style="cornerRadius: 5; fontSize: 24;" skinClass="ButtonSkin"/>
+
+      <s:Button label="cornerRadius: 0; fontSize: 12;" style="cornerRadius: 0; fontSize: 12;" skinClass="ButtonSkin"/>
+
+      <s:Button label="cornerRadius: 10;" style="cornerRadius: 10;" skinClass="ButtonSkin"/>
+
+      <s:Button label="fontSize: 48;" style="fontSize: 48;" skinClass="ButtonSkin"/>
+
+      <s:Button id="b1" label="set style property" skinClass="ButtonSkin">
+        <s:click>
+            var ss:String = "fontSize: 36";
+            b1.label = ss;
+            b1.style = ss;
+        </s:click>
+      </s:Button>
+
+      <s:Button label="icon = Button.png" style="icon: Button.png" skinClass="ButtonSkin"/>
+
+      <s:Button label="icon = Button.png; overIcon = Button_over.png" style="icon: Button.png; overIcon: Button_over.png" skinClass="ButtonSkin"/>
+
+      <s:Button label="labelPlacement = right" style="labelPlacement: right; icon: Button.png" skinClass="ButtonSkin"/>
+      <s:Button label="labelPlacement = left; horizontalGap = 100" style="labelPlacement: {ButtonLabelPlacement.LEFT}; icon: Button.png; horizontalGap: 100" skinClass="ButtonSkin"/>
+      <s:Button label="labelPlacement = top" style="labelPlacement: {ButtonLabelPlacement.TOP}; icon: Button.png" skinClass="ButtonSkin"/>
+      <s:Button label="labelPlacement = bottom verticalGap = 100" style="labelPlacement: {ButtonLabelPlacement.BOTTOM}; icon: Button.png; verticalGap: 100" skinClass="ButtonSkin"/>
+    </s:VGroup>
+  </s:Scroller>
+
 </s:Application>

@@ -10,8 +10,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 package mx.core
-{
-
+{	
 import flash.accessibility.Accessibility;
 import flash.accessibility.AccessibilityProperties;
 import flash.display.BlendMode;
@@ -41,11 +40,13 @@ import flash.system.ApplicationDomain;
 import flash.system.Capabilities;
 import flash.text.TextFormatAlign;
 import flash.text.TextLineMetrics;
+import flash.ui.Keyboard;
 import flash.utils.getQualifiedClassName;
 
 import mx.automation.IAutomationObject;
 import mx.binding.BindingManager;
 import mx.controls.IFlexContextMenu;
+import mx.core.LayoutDirection;
 import mx.effects.EffectManager;
 import mx.effects.IEffect;
 import mx.effects.IEffectInstance;
@@ -102,6 +103,9 @@ import mx.validators.IValidatorListener;
 import mx.validators.ValidationResult;
 
 use namespace mx_internal;
+
+// Excluding the property to enable code hinting for the layoutDirection style
+[Exclude(name="layoutDirection", kind="property")]
 
 //--------------------------------------
 //  Lifecycle events
@@ -894,6 +898,46 @@ include "../styles/metadata/AnchorStyles.as";
 [Style(name="focusThickness", type="Number", format="Length", inherit="no", minValue="0.0")]
 
 /**
+ *  Specifies the desired layout direction of a component. The allowed values
+ *  are <code>"ltr"</code> for left-to-right layout, used for 
+ *  components using Latin-style scripts, and <code>"rtl"</code> for
+ *  right-to-left layout, used for components using scripts such
+ *  as Arabic and Hebrew.
+ * 
+ *  <p>In ActionScript you can set the layoutDirection using the values 
+ *  <code>mx.core.LayoutDirection.LTR</code>, 
+ *  <code>mx.core.LayoutDirection.RTL</code> or 
+ *  <code>undefined</code>, to inherit the layoutDirection from the parent.</p>
+ * 
+ *  <p>The layoutDirection should typically be set on the 
+ *  <code>Application</code> rather than on individual components. If the 
+ *  layoutDirection is <code>"rtl"</code>, most visual elements, except text 
+ *  and images, will be mirrored.  The directionality of text is determined 
+ *  by the <code>direction</code> style.</p>
+ * 
+ *  <p>Components which handle Keyboard.LEFT and Keyboard.RIGHT events
+ *  typically swap the key’s meaning when layoutDirection is 
+ *  <code>“rtl”</code>.  In other words, left always means move left and
+ *  right always means move right, regardless of the 
+ *  <code>layoutDirection</code></p>
+ * 
+ *  <p>Note: This style applies to all Spark components and MX components that
+ *  specify UIFTETextField as their textFieldClass.</p> 
+ * 
+ *  @default "ltr"
+ * 
+ *  @see MXFTEText.css
+ *  @see mx.core.ILayoutDirectionElement
+ *  @see mx.core.LayoutDirection
+ * 
+ *  @langversion 3.0
+ *  @playerversion Flash 10
+ *  @playerversion AIR 1.5
+ *  @productversion Flex 4.1
+ */
+[Style(name="layoutDirection", type="String", enumeration="ltr,rtl", inherit="yes")]
+
+/**
  *  Theme color of a component. This property controls the appearance of highlights,
  *  appearance when a component is selected, and other similar visual cues, but it
  *  does not have any effect on the regular borders or background colors of the component.
@@ -1131,6 +1175,7 @@ include "../styles/metadata/AnchorStyles.as";
  *    focusSkin="HaloFocusRect""
  *    focusThickness="2"
  *    horizontalCenter="undefined"
+ *    layoutDirection="ltr"
  *    left="undefined"
  *    right="undefined"
  *    themeColor="haloGreen"
@@ -1531,6 +1576,11 @@ public class UIComponent extends FlexSprite
      */
     private var transitionFromState:String;
     private var transitionToState:String;
+    
+    /**
+     *  @private
+     */
+    private var parentChangedFlag:Boolean = false;
     
     //--------------------------------------------------------------------------
     //
@@ -2550,7 +2600,8 @@ public class UIComponent extends FlexSprite
 
     /**
      *  @private
-     *  Storage for the width property.
+     *  Storage for the width property. This should not be used to set the
+     *  width because it bypasses the mirroring transform in the setter.
      */
     mx_internal var _width:Number;
 
@@ -2573,14 +2624,10 @@ public class UIComponent extends FlexSprite
      *  <p>Setting this property causes a <code>resize</code> event to
      *  be dispatched.
      *  See the <code>resize</code> event for details on when
-     *  this event is dispatched.
-     *  If the component's <code>scaleX</code> property is not 1.0,
-     *  the width of the component from its internal coordinates
-     *  do not match.
-     *  Thus a 100 pixel wide component with a <code>scaleX</code>
-     *  of 2 takes 100 pixels in the parent, but 
-     *  internally thinks it is 50 pixels wide.</p>
-     *  
+     *  this event is dispatched.</p>
+     * 
+     *  @see #percentWidth
+     *
      *  @langversion 3.0
      *  @playerversion Flash 9
      *  @playerversion AIR 1.1
@@ -2612,7 +2659,14 @@ public class UIComponent extends FlexSprite
             invalidateParentSizeAndDisplayList();
 
             _width = value;
-
+			
+			// The width is needed for the _layoutFeatures' mirror transform.
+			if (_layoutFeatures)
+			{
+				_layoutFeatures.layoutWidth = _width;
+				invalidateTransform();
+			}
+			
             if (hasEventListener("widthChanged"))
                 dispatchEvent(new Event("widthChanged"));
         }
@@ -2646,14 +2700,10 @@ public class UIComponent extends FlexSprite
      *
      *  <p>Setting this property causes a <code>resize</code> event to be dispatched.
      *  See the <code>resize</code> event for details on when
-     *  this event is dispatched.
-     *  If the component's <code>scaleY</code> property is not 100,
-     *  the height of the component from its internal coordinates
-     *  do not match.
-     *  Thus a 100 pixel high component with a <code>scaleY</code>
-     *  of 200 takes 100 pixels in the parent, but 
-     *  internally thinks it is 50 pixels high.</p>
-     *  
+     *  this event is dispatched.</p>
+     * 
+     *  @see #percentHeight 
+     * 
      *  @langversion 3.0
      *  @playerversion Flash 9
      *  @playerversion AIR 1.1
@@ -2950,7 +3000,7 @@ public class UIComponent extends FlexSprite
     {
         super.scaleY = value;
     }
-
+	
     //----------------------------------
     //  visible
     //----------------------------------
@@ -4992,7 +5042,7 @@ public class UIComponent extends FlexSprite
     [Inspectable(environment="none")]
 
     /**
-     *  Number that specifies the width of a component as a percentage
+     *  Specifies the width of a component as a percentage
      *  of its parent's size. Allowed values are 0-100. The default value is NaN.
      *  Setting the <code>width</code> or <code>explicitWidth</code> properties
      *  resets this property to NaN.
@@ -5002,6 +5052,11 @@ public class UIComponent extends FlexSprite
      *  in percent.</p>
      *
      *  <p>This property is always set to NaN for the UITextField control.</p>
+     * 
+     *  <p>When used with Spark layouts, this property is used to calculate the
+     *  width of the component's bounds after scaling and rotation. For example 
+     *  if the component is rotated at 90 degrees, then specifying 
+     *  <code>percentWidth</code> will affect the component's height.</p>
      *  
      *  @langversion 3.0
      *  @playerversion Flash 9
@@ -5043,7 +5098,7 @@ public class UIComponent extends FlexSprite
     [Inspectable(environment="none")]
 
     /**
-     *  Number that specifies the height of a component as a percentage
+     *  Specifies the height of a component as a percentage
      *  of its parent's size. Allowed values are 0-100. The default value is NaN.
      *  Setting the <code>height</code> or <code>explicitHeight</code> properties
      *  resets this property to NaN.
@@ -5053,6 +5108,11 @@ public class UIComponent extends FlexSprite
      *  in percent.</p>
      *
      *  <p>This property is always set to NaN for the UITextField control.</p>
+     *  
+     *  <p>When used with Spark layouts, this property is used to calculate the
+     *  height of the component's bounds after scaling and rotation. For example 
+     *  if the component is rotated at 90 degrees, then specifying 
+     *  <code>percentHeight</code> will affect the component's width.</p>
      *  
      *  @langversion 3.0
      *  @playerversion Flash 9
@@ -5812,7 +5872,46 @@ public class UIComponent extends FlexSprite
             dispatchEvent(new Event("includeInLayoutChanged"));
         }
     }
-
+    
+    //----------------------------------
+    //  layoutDirection
+    //----------------------------------
+    
+    /**
+     *  Checked at commitProperties() time to see if our layoutDirection has changed,
+     *  or our parent's layoutDirection has changed.  This variable is reset after the 
+     *  entire validateProperties() phase is complete so that it's possible for a child
+     *  to check if its parent's layoutDirection has changed, see commitProperties().
+     *  The flag is cleared in validateDisplayList().
+     */
+    mx_internal var oldLayoutDirection:String = LayoutDirection.LTR;
+        
+    /**
+     *  @inheritDoc
+     */
+    public function get layoutDirection():String
+    {
+        return getStyle("layoutDirection");        
+    }
+    
+    /**
+     *  @private
+     *  Changes to the layoutDirection style cause an invalidateProperties() call,
+     *  see StyleProtoChain/styleChanged().  At commitProperties() time we use
+     *  invalidateLayoutDirection() to add/remove the mirroring transform.
+     * 
+     *  layoutDirection=undefined or layoutDirection=null has the same effect
+     *  as setStyle(“layoutDirection”, undefined).
+     */
+    public function set layoutDirection(value:String):void
+    {
+        // Set the value to null to inherit the layoutDirection.
+        if (value == null)
+            setStyle("layoutDirection", undefined);
+        else
+            setStyle("layoutDirection", value);
+    }
+    
     //--------------------------------------------------------------------------
     //
     //  Properties: Repeater
@@ -7051,9 +7150,9 @@ public class UIComponent extends FlexSprite
         }
 
         // trace("               " + p);
-
+        parentChangedFlag = true;
     }
-
+	
     /**
      *  @private
      */
@@ -7524,6 +7623,67 @@ public class UIComponent extends FlexSprite
             }
         }
     }
+    
+    /**
+     * @inheritDoc
+     */
+    public function invalidateLayoutDirection():void
+    {       
+        const parentElt:ILayoutDirectionElement = parent as ILayoutDirectionElement;        
+        const thisLayoutDirection:String = layoutDirection;
+        
+        // If this element's layoutDirection doesn't match its parent's, then
+        // set the _layoutFeatures.mirror flag.  Similarly, if mirroring isn't 
+        // required, then clear the _layoutFeatures.mirror flag.
+        
+        const mirror:Boolean = (parentElt) 
+            ? (parentElt.layoutDirection != thisLayoutDirection)
+            : (LayoutDirection.LTR != thisLayoutDirection);
+      
+        if ((_layoutFeatures) ? (mirror != _layoutFeatures.mirror) : mirror)
+        {
+            if (_layoutFeatures == null)
+                initAdvancedLayoutFeatures();
+            _layoutFeatures.mirror = mirror;
+            // width may have already been set
+            _layoutFeatures.layoutWidth = _width;
+            invalidateTransform();
+        }
+        
+        // Children are notified only if the component's layoutDirection has changed.
+        if (oldLayoutDirection != layoutDirection)
+        {
+            var i:int;
+            
+            //  If we have children, the styleChanged() machinery (via commitProperties()) will
+            //  deal with UIComponent children. We have to deal with IVisualElement and
+            //  ILayoutDirectionElement children that don't support styles, like GraphicElements, here.
+            if (this is IVisualElementContainer)
+            {
+                const thisContainer:IVisualElementContainer = IVisualElementContainer(this);
+                const thisContainerNumElements:int = thisContainer.numElements;
+            
+                for (i = 0; i < thisContainerNumElements; i++)
+                {
+                    var elt:IVisualElement = thisContainer.getElementAt(i);
+                    // Can be null if IUITextField or IUIFTETextField.
+                    if (elt && !(elt is IStyleClient))
+                        elt.invalidateLayoutDirection();
+                }
+            }
+            else
+            {
+                const thisNumChildren:int = numChildren;
+                
+                for (i = 0; i < thisNumChildren; i++)
+                {
+                    var child:DisplayObject = getChildAt(i);
+                    if (!(child is IStyleClient) && child is ILayoutDirectionElement)
+                        ILayoutDirectionElement(child).invalidateLayoutDirection();
+                }
+            }
+        }  
+    }  
 
     private function transformOffsetsChangedHandler(e:Event):void
     {
@@ -7597,6 +7757,7 @@ public class UIComponent extends FlexSprite
     public function styleChanged(styleProp:String):void
     {
         StyleProtoChain.styleChanged(this, styleProp);
+        
         if (styleProp && (styleProp != "styleName"))
         { 
             if (hasEventListener(styleProp + "Changed"))
@@ -7856,6 +8017,17 @@ public class UIComponent extends FlexSprite
             _currentStateChanged = false;
             commitCurrentState();
         }
+        
+        if (FlexVersion.compatibilityVersion >= FlexVersion.VERSION_4_0)
+        {
+            // If this component's layout direction has changed, or its parent's layoutDirection
+            // has changed, then call invalidateLayoutDirection().
+            const parentUIC:UIComponent = parent as UIComponent;
+            
+            if ((oldLayoutDirection != layoutDirection) || parentChangedFlag ||
+                (parentUIC && (parentUIC.layoutDirection != parentUIC.oldLayoutDirection)))
+                invalidateLayoutDirection();
+        }
 
         if (x != oldX || y != oldY)
         {
@@ -7864,7 +8036,7 @@ public class UIComponent extends FlexSprite
 
         if (width != oldWidth || height != oldHeight)
             dispatchResizeEvent();
-
+        
         if (errorStringChanged)
         {
             errorStringChanged = false;
@@ -7933,6 +8105,8 @@ public class UIComponent extends FlexSprite
                 }        
             }
         }
+        
+        parentChangedFlag = false;
     }
 
     //--------------------------------------------------------------------------
@@ -8471,7 +8645,7 @@ public class UIComponent extends FlexSprite
      *  @private
      */
     protected function validateMatrix():void
-    {
+    {        
         if (_layoutFeatures != null && _layoutFeatures.updatePending == true)
         {
             applyComputedMatrix();
@@ -8496,7 +8670,7 @@ public class UIComponent extends FlexSprite
      */
     public function validateDisplayList():void
     {
-        validateMatrix();
+        oldLayoutDirection = layoutDirection;
         
         if (invalidateDisplayListFlag)
         {
@@ -8507,11 +8681,15 @@ public class UIComponent extends FlexSprite
                 if (sm.isProxy || (sm == systemManager.topLevelSystemManager &&
                     sm.document != this))
                 {
-                    // Size ourself to the new measured width/height
+                    // Size ourself to the new measured width/height   This can
+                    // cause the _layoutFeatures computed matrix to become invalid 
                     setActualSize(getExplicitOrMeasuredWidth(),
                                   getExplicitOrMeasuredHeight());
                 }
             }
+            
+            // Don't validate transform.matrix until after setting actual size
+            validateMatrix();
 
             var unscaledWidth:Number = width;
             var unscaledHeight:Number = height;
@@ -8537,6 +8715,9 @@ public class UIComponent extends FlexSprite
             // LAYOUT_DEBUG
             // LayoutManager.debugHelper.addElement(ILayoutElement(this));
         }
+        else
+            validateMatrix();
+                    
     }
 
     /**
@@ -9153,6 +9334,11 @@ public class UIComponent extends FlexSprite
         if (_width != w)
         {
             _width = w;
+			if(_layoutFeatures)
+            {
+				_layoutFeatures.layoutWidth = w;  // for the mirror transform
+				invalidateTransform();
+			}			
             if (hasEventListener("widthChanged"))
                 dispatchEvent(new Event("widthChanged"));
             changed = true;
@@ -9548,9 +9734,9 @@ public class UIComponent extends FlexSprite
 
             focusObj.setActualSize(width + 2 * thickness,
                                    height + 2 * thickness);
-
+            
             var pt:Point;
-
+            
             if (rotation)
             {
                 var rotRad:Number = rotation * Math.PI / 180;
@@ -9563,14 +9749,31 @@ public class UIComponent extends FlexSprite
                 pt = new Point(obj.x - thickness, obj.y - thickness);
                 DisplayObject(focusObj).rotation = 0;
             }
-
+            
             if (obj.parent == this)
             {
                 // This adjustment only works if obj is a direct child of this.
                 pt.x += x;
                 pt.y += y;
             }
-            pt = parent.localToGlobal(pt);
+            
+            // If necessary, compenstate for mirroring, if the obj to receive
+            // focus isn't this component.  It is likely to be an icon within
+            // the component such as a radio button or check box.  This works
+            // as long as the focusObj is symmetric.
+            // ToDo(cframpto):ProgrammaticSkin implement ILayoutDirectionElement.
+            if (obj != this)
+            {
+                // The focusObj is attached to this component's parent.  Assume
+                // the focusObj is a class which doesn't support layoutDirection
+                // and will be laid out like the component's parent.  If the 
+                // component is being mirrored it means its layout differs from 
+                // its parent and we need to compenstate.
+                if (_layoutFeatures && _layoutFeatures.mirror)
+                    pt.x += this.width - obj.width;      
+            }
+            
+            pt = parent.localToGlobal(pt);                
             pt = parent.globalToLocal(pt);
             focusObj.move(pt.x, pt.y);
 
@@ -9653,7 +9856,64 @@ public class UIComponent extends FlexSprite
     mx_internal function childXYChanged():void
     {
     }
-
+        
+    /**
+     *  @private
+     *  Typically, Keyboard.LEFT means go left, regardless of the 
+     *  layoutDirection, and similiarly for Keyboard.RIGHT.  When 
+     *  layoutDirection="rtl", rather than duplicating lots of code in the
+     *  switch statement of the keyDownHandler, map Keyboard.LEFT to
+     *  Keyboard.RIGHT, and similiarly for Keyboard.RIGHT.  
+     * 
+     *  Optionally, Keyboard.UP can be tied with Keyboard.LEFT and 
+     *  Keyboard.DOWN can be tied with Keyboard.RIGHT since some components 
+     *  do this.
+     * 
+     *  @return keyCode to use for the layoutDirection if always using ltr 
+     *  actions
+     */
+    // TODO(cframpto): change to protected after getting PARB review of name.
+    mx_internal function mapKeycodeForLayoutDirection(
+        event:KeyboardEvent, 
+        mapUpDown:Boolean=false):uint
+    {
+        var keyCode:uint = event.keyCode;
+        
+        // If rtl layout, left still means left and right still means right so
+        // swap the keys to get the correct action.
+        switch (keyCode)
+        {
+            case Keyboard.DOWN:
+            {
+                // typically, if ltr, the same as RIGHT
+                if (mapUpDown && layoutDirection == LayoutDirection.RTL)
+                    keyCode = Keyboard.LEFT;
+                break;
+            }
+            case Keyboard.RIGHT:
+            {
+                if (layoutDirection == LayoutDirection.RTL)
+                    keyCode = Keyboard.LEFT;
+                break;
+            }
+            case Keyboard.UP:
+            {
+                // typically, if ltr, the same as LEFT
+                if (mapUpDown && layoutDirection == LayoutDirection.RTL)
+                    keyCode = Keyboard.RIGHT;                
+                break;
+            }
+            case Keyboard.LEFT:
+            {
+                if (layoutDirection == LayoutDirection.RTL)
+                    keyCode = Keyboard.RIGHT;                
+                break;
+            }
+        }
+        
+        return keyCode;
+    }
+    
     //--------------------------------------------------------------------------
     //
     //  Methods: States
@@ -11697,8 +11957,10 @@ public class UIComponent extends FlexSprite
                 msg = event.results[0].errorMessage;
             }
 
-            if (msg && validatorIndex != -1 && errorArray[validatorIndex] != msg)
+            if (msg && validatorIndex != -1)
             {
+                // Handle the case where this target already had this invalid
+                // event and the errorString has been cleared.
                 errorArray[validatorIndex] = msg;
                 errorString = errorArray.join("\n");
                 dispatchEvent(new FlexEvent(FlexEvent.INVALID));
@@ -12317,6 +12579,7 @@ public class UIComponent extends FlexSprite
         features.layoutX = x;
         features.layoutY = y;
         features.layoutZ = z;
+		features.layoutWidth = width;  // for the mirror transform		
         _layoutFeatures = features;
         invalidateTransform();
     }
@@ -12324,7 +12587,7 @@ public class UIComponent extends FlexSprite
     /**
      *  @private
      *  Helper function to update the storage vairable _transform.
-     *  Also updates the <code>target</code> proeprty of the new and the old
+     *  Also updates the <code>target</code> property of the new and the old
      *  values.
      */
     private function setTransform(value:flash.geom.Transform):void
@@ -12367,7 +12630,7 @@ public class UIComponent extends FlexSprite
         }
         return _transform;
     }
-
+    
     /**
      *  @private
      */
@@ -12844,6 +13107,11 @@ public class UIComponent extends FlexSprite
             super.transform.matrix = _layoutFeatures.computedMatrix;
         }
     }
+    
+    mx_internal function get computedMatrix():Matrix
+    {
+        return (_layoutFeatures) ?  _layoutFeatures.computedMatrix : transform.matrix;
+    }
 
     /**
      *  Specifies a transform stretch factor in the horizontal and vertical direction.
@@ -13168,28 +13436,54 @@ public class UIComponent extends FlexSprite
             return super.transform.matrix;
         }
     }
-    
-    
+
+
+  
     private var _style:String;
-    
+
     public function set style(_style:String):void
     {
       this._style = _style;
-      
+
       var stylesArray:Array = _style.split(";");
-        
+
       for each (var s:String in stylesArray)
       {
         if (s.length > 0)
         {
           s = s.replace(/\s/g,"");
           var a:Array = s.split(":");
-          
-          // needed?
+
           if ((a[1] as String).charAt(0) == "[")
           {
             var ss:String = a[1].substr(1, a[1].length - 2);
             var na:Array = ss.split(",");
+
+            // convert values into numbers
+            for (var i:uint = 0; i < na.length; i++)
+            {
+              var v:String = na[i];
+              if (v.substr(0, 2) == "0x")
+              {
+                na[i] = new uint(v);
+              }
+              else if (v.charAt(0) == "#")
+              {
+                na[i] = new uint("0x" + v.substr(1));
+              }
+              else
+              {
+                try
+                {
+                  na[i] = new Number(v);
+                }
+                catch (e:Error)
+                {
+                  // ignored
+                }
+              }
+            }
+
             setStyle(a[0], na);
           }
           else
@@ -13199,7 +13493,7 @@ public class UIComponent extends FlexSprite
         }
       }
     }
-    
+
     public function get style():String
     {
       return _style;
